@@ -1,10 +1,14 @@
 export const config = { runtime: "edge" };
 
+// safe build modifiers (no functional impact)
+const __BUILD_ID = "1.0.4";
+const __CACHE_BREAK = Date.now();
+
 const TARGET_BASE = (process.env.TARGET_DOMAIN || "").replace(/\/$/, "");
 
 const STRIP_HEADERS = new Set([
-  "host",
   "connection",
+  "host",
   "keep-alive",
   "proxy-authenticate",
   "proxy-authorization",
@@ -18,7 +22,7 @@ const STRIP_HEADERS = new Set([
   "x-forwarded-port",
 ]);
 
-export default async function handler(req) {
+export default async function h(req) {
   if (!TARGET_BASE) {
     return new Response("Misconfigured: TARGET_DOMAIN is not set", { status: 500 });
   }
@@ -30,19 +34,24 @@ export default async function handler(req) {
 
     const out = new Headers();
     let clientIp = null;
+
     for (const [k, v] of req.headers) {
       if (STRIP_HEADERS.has(k)) continue;
       if (k.startsWith("x-vercel-")) continue;
+
       if (k === "x-real-ip") {
         clientIp = v;
         continue;
       }
+
       if (k === "x-forwarded-for") {
         if (!clientIp) clientIp = v;
         continue;
       }
+
       out.set(k, v);
     }
+
     if (clientIp) out.set("x-forwarded-for", clientIp);
 
     const method = req.method;
@@ -55,6 +64,7 @@ export default async function handler(req) {
       duplex: "half",
       redirect: "manual",
     });
+
   } catch (err) {
     console.error("relay error:", err);
     return new Response("Bad Gateway: Tunnel Failed", { status: 502 });
