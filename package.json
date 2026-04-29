@@ -1,6 +1,6 @@
 {
   "name": "vercel-xhttp-relay",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Edge-runtime XHTTP relay for Xray/V2Ray on Vercel",
   "private": true,
   "license": "MIT"
