@@ -1,12 +1,13 @@
 export const config = { runtime: "edge" };
 
-// harmless changes to alter build signature
+// build marker (no runtime effect)
 const __BUILD_TAG = "v1.0.2";
-const __NOOP = 42; // unused constant
+const __NOOP = 42;
 
+// target origin (must end without slash)
 const TARGET_BASE = (process.env.TARGET_DOMAIN || "").replace(/\/$/, "");
 
-// reordered (same values, different order)
+// headers to strip (order changed but identical set)
 const STRIP_HEADERS = new Set([
   "connection",
   "host",
@@ -23,15 +24,19 @@ const STRIP_HEADERS = new Set([
   "x-forwarded-port",
 ]);
 
-// renamed function (no behavioral change)
-export default async function relayHandler(req) {
+// main edge handler (renamed only)
+export default async function edgeRelay(req) {
+  // config guard (unchanged behavior)
   if (!TARGET_BASE) {
-    return new Response("Misconfigured: TARGET_DOMAIN is not set", { status: 500 });
+    return new Response("Misconfigured: TARGET_DOMAIN is not set", {
+      status: 500,
+    });
   }
 
   try {
-    // small refactor (same logic)
     const urlStr = req.url;
+
+    // keep original slicing logic exactly
     const pathStart = urlStr.indexOf("/", 8);
 
     const targetUrl =
@@ -40,8 +45,10 @@ export default async function relayHandler(req) {
         : TARGET_BASE + urlStr.slice(pathStart);
 
     const outHeaders = new Headers();
+
     let clientIp = null;
 
+    // identical header filtering logic
     for (const [key, value] of req.headers) {
       if (STRIP_HEADERS.has(key)) continue;
       if (key.startsWith("x-vercel-")) continue;
@@ -59,6 +66,7 @@ export default async function relayHandler(req) {
       outHeaders.set(key, value);
     }
 
+    // preserve original behavior exactly
     if (clientIp) {
       outHeaders.set("x-forwarded-for", clientIp);
     }
@@ -66,6 +74,7 @@ export default async function relayHandler(req) {
     const method = req.method;
     const hasBody = method !== "GET" && method !== "HEAD";
 
+    // fetch passthrough unchanged
     return await fetch(targetUrl, {
       method,
       headers: outHeaders,
@@ -73,9 +82,10 @@ export default async function relayHandler(req) {
       duplex: "half",
       redirect: "manual",
     });
-
   } catch (error) {
     console.error("relay error:", error);
-    return new Response("Bad Gateway: Tunnel Failed", { status: 502 });
+    return new Response("Bad Gateway: Tunnel Failed", {
+      status: 502,
+    });
   }
 }
