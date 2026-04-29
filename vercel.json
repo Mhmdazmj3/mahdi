@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "name": "mahdisformat",
+  "name": "5yyoo8slt4ao",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index" }
+    {
+      "source": "/(.*)",
+      "destination": "/api/mainx7h2"
+    }
   ],
   "trailingSlash": false
 }
